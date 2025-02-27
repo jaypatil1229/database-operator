@@ -27,8 +27,8 @@ const setTableNames = (type) => {
   const tableSelect = document.querySelector(`#${type}-table-name-select`);
   const value = tableSelect.value;
 
-  //fetch table names from /database-operator/get-all-tables.php
-  fetch("/database-operator/get-all-tables.php")
+  //fetch table names from /database-operator/php-code/get-all-tables.php
+  fetch("/database-operator/php-code/get-all-tables.php")
     .then((response) => response.json())
     .then((data) => {
       if (data.status === "success") {
@@ -66,9 +66,10 @@ const setTableNames = (type) => {
 };
 
 const getTableStructure = async (tableName) => {
-  //fetch the table structure from /database-operator/get-table-structures.php
+  //fetch the table structure from /database-operator/php-code/get-table-structures.php
   const response = await fetch(
-    "/database-operator/get-table-structures.php?table_name=" + tableName
+    "/database-operator/php-code/get-table-structures.php?table_name=" +
+      tableName
   );
   const data = await response.json();
   return data.status === "success" ? data.data : [];
@@ -83,6 +84,7 @@ const handleTableSelectChange = (event) => {
   getTableStructure(tableName).then((data) => {
     if (data.length === 0) {
       alert("No data found in the table");
+      populateTableStructure([]);
       return;
     }
     populateTableStructure(data);
@@ -231,7 +233,7 @@ const handleCreateTableSubmit = (event) => {
   //   console.log("columnNames", columnNames);
 
   //submit the form data to the server
-  const url = "/database-operator/create-table.php";
+  const url = "/database-operator/php-code/create-table.php";
   const options = {
     method: "POST",
     body: JSON.stringify({
@@ -309,7 +311,7 @@ const handleInsertRecordSubmit = (event) => {
   }
 
   //submit the form data to the server with table_name and record as the column name and value pairs not including the table_name
-  const url = "/database-operator/insert.php";
+  const url = "/database-operator/php-code/insert.php";
   const options = {
     method: "POST",
     body: JSON.stringify({
@@ -348,9 +350,9 @@ const handleInsertRecordSubmit = (event) => {
 
 const getTableData = async (tableName) => {
   try {
-    //fetch the table data from /database-operator/get-table-data.php
+    //fetch the table data from /database-operator/php-code/get-table-data.php
     const response = await fetch(
-      "/database-operator/get-table-data.php?table_name=" + tableName
+      "/database-operator/php-code/get-table-data.php?table_name=" + tableName
     );
     const data = await response.json();
     return data.status === "success" ? data.data : [];
@@ -407,8 +409,8 @@ const handleUpdateRecordSubmit = async (
   };
 
   console.log("body", body);
-  //submit form to /database-operator/update.php with data as table_name and record as the column name and value pairs
-  const url = "/database-operator/update.php";
+  //submit form to /database-operator/php-code/update.php with data as table_name and record as the column name and value pairs
+  const url = "/database-operator/php-code/update.php";
   const options = {
     method: "POST",
     body: JSON.stringify(body),
@@ -533,8 +535,8 @@ const populateUpdateTableStructure = (tableName, tableHeaders, tableData) => {
 // Delete tab content
 
 const handleDeleteRecord = async (tableName, recordToDelete) => {
-  //submit form to /database-operator/delete.php with data as table_name and record_id
-  const url = "/database-operator/delete.php";
+  //submit form to /database-operator/php-code/delete.php with data as table_name and record_id
+  const url = "/database-operator/php-code/delete.php";
   const options = {
     method: "POST",
     body: JSON.stringify({
@@ -645,6 +647,11 @@ const handleUpdateDeleteTableSelectChange = async (event, tab) => {
   const tableData = await getTableData(tableName);
 
   if (tableData.length === 0) {
+    event.target.value = "";
+    const rowsContainer = document.querySelector(`#${tab}-records-rows`);
+    //clear the rows container
+    rowsContainer.innerHTML = "";
+
     alert("No data found in the table");
     return;
   }
