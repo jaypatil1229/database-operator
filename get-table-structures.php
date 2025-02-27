@@ -32,6 +32,11 @@
     $columns = [];
     if($result->num_rows > 0){
         while($row = $result->fetch_assoc()){
+            //check if column is auto increment if yes then don't add it to the columns array
+            if($row['Extra'] === 'auto_increment' || $row['Field'] === '_id'){
+                continue;
+            }
+            
             $columns[] = $row;
         }
     }

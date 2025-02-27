@@ -17,6 +17,9 @@ tabs.forEach((tab) => {
     if (tab.dataset.target === "update-tab-content") {
       setTableNames("update");
     }
+    if (tab.dataset.target === "delete-tab-content") {
+      setTableNames("delete");
+    }
   });
 });
 
@@ -50,10 +53,7 @@ const handleTableSelectChange = (event) => {
   }
 
   //fetch the table structure from /database-operator/get-table-structures.php
-  fetch(
-    "/database-operator/get-table-structures.php?table_name=" +
-      tableName
-  )
+  fetch("/database-operator/get-table-structures.php?table_name=" + tableName)
     .then((response) => response.json())
     .then((data) => {
       console.log(data);
@@ -300,8 +300,15 @@ const handleInsertRecordSubmit = (event) => {
       console.log(data);
       if (data.status === "success") {
         alert("Record inserted successfully");
+
         //clear the form fields
         event.target.reset();
+        //remove the column input fields
+        const parentContainer = document.querySelector(
+          "#insert-record-input-fields"
+        );
+        //remove all the child nodes as its insert tab
+        parentContainer.innerHTML = "";
       } else {
         alert(data.message || "Record insertion failed");
       }
@@ -311,24 +318,329 @@ const handleInsertRecordSubmit = (event) => {
     });
 };
 
-const handleUpdateTableSelectChange = (event) => {
+const getTableData = async (tableName) => {
+  try {
+    //fetch the table data from /database-operator/get-table-data.php
+    const response = await fetch(
+      "/database-operator/get-table-data.php?table_name=" + tableName
+    );
+    const data = await response.json();
+    return data.status === "success" ? data.data : [];
+  } catch (error) {
+    console.log("Error:", error.message);
+    return [];
+  }
+};
+
+const handleUpdateRecordSubmit = async (
+  tableName,
+  tableHeaders,
+  updatedData
+) => {
+  //check if the row data is empty or individual fields are empty
+  if (!updatedData) {
+    alert("No data found to update");
+    return;
+  }
+
+  let isValid = true;
+
+  //check that all the input fields have a value
+  for (const key in updatedData) {
+    if (updatedData[key] === "") {
+      alert("All fields are required");
+      isValid = false;
+      break;
+    }
+  }
+
+  if (!isValid) {
+    alert("All fields are required");
+    return;
+  }
+
+  let record = [];
+  tableHeaders.forEach((header) => {
+    console.log("key", header);
+    if (!updatedData.hasOwnProperty(header)) {
+      alert("All fields are required");
+      return;
+    }
+    record.push({
+      column_name: header,
+      column_value: updatedData[header],
+    });
+  });
+
+  const body = {
+    table_name: tableName,
+    record_id: updatedData._id,
+    record: record,
+  };
+
+  console.log("body", body);
+  //submit form to /database-operator/update.php with data as table_name and record as the column name and value pairs
+  const url = "/database-operator/update.php";
+  const options = {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+
+  fetch(url, options)
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      if (data.status === "success") {
+        alert("Record updated successfully");
+        //refresh the table data
+        handleUpdateDeleteTableSelectChange(
+          { target: { value: tableName } },
+          "update"
+        );
+      } else {
+        alert(data.message || "Record update failed");
+      }
+    })
+    .catch((error) => {
+      console.log("Error:", error.message);
+    });
+};
+
+const populateUpdateTableStructure = (tableName, tableHeaders, tableData) => {
+  const rowsContainer = document.querySelector("#update-records-rows");
+  rowsContainer.innerHTML = ""; // Clear existing rows
+
+  // Create Header Row
+  const headerRow = document.createElement("div");
+  headerRow.className = "grid gap-4 font-bold bg-gray-300 p-2";
+  headerRow.style.gridTemplateColumns = `${"1fr ".repeat(
+    tableHeaders.length
+  )} 0.5fr`; // last 0.5fr for Action column
+
+  // Populate Header
+  tableHeaders.forEach((header) => {
+    const headerCell = document.createElement("div");
+    headerCell.className = "text-center";
+    headerCell.textContent = header;
+    headerRow.appendChild(headerCell);
+  });
+  // Add Action Column Header
+  const actionHeader = document.createElement("div");
+  actionHeader.className = "text-center";
+  actionHeader.textContent = "Action";
+  headerRow.appendChild(actionHeader);
+
+  rowsContainer.appendChild(headerRow);
+
+  // Loop through tableData to create rows
+  tableData.forEach((rowData, rowIndex) => {
+    // Create a form for each row
+    const form = document.createElement("form");
+    form.className = "grid gap-4 items-center p-2";
+    form.style.gridTemplateColumns = `${"1fr ".repeat(
+      tableHeaders.length
+    )} 0.5fr`; // last 0.5fr for Action column
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      // Extract form data and submit to handleUpdateRecordSubmit
+      const formData = new FormData(e.target);
+      const updatedData = {};
+      formData.forEach((value, key) => {
+        updatedData[key] = value;
+      });
+      // Add _id to updatedData
+      updatedData._id = rowData._id;
+      console.log("record", updatedData);
+      handleUpdateRecordSubmit(tableName, tableHeaders, updatedData);
+    };
+
+    // Create input fields for each header
+    tableHeaders.forEach((header) => {
+      const inputDiv = document.createElement("div");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.name = header;
+      input.id = `${header}-${rowIndex}`;
+      input.placeholder = `Enter ${header}`;
+      input.required = true;
+      input.className = "text-sm p-2 border-b w-full bg-gray-300";
+      input.value = rowData[header] || ""; // Set initial value if available
+
+      inputDiv.appendChild(input);
+      form.appendChild(inputDiv);
+    });
+
+    // Create Action button
+    const actionDiv = document.createElement("div");
+    actionDiv.className = "text-center";
+    const updateButton = document.createElement("button");
+    updateButton.type = "submit";
+    updateButton.className =
+      "p-2 bg-blue-600 text-white rounded-xl cursor-pointer text-sm";
+    updateButton.innerText = "Update";
+
+    actionDiv.appendChild(updateButton);
+    form.appendChild(actionDiv);
+
+    // Append the form as a row
+    rowsContainer.appendChild(form);
+  });
+};
+
+// const handleUpdateTableSelectChange = async (event) => {
+//   const tableName = event.target.value;
+//   if (tableName === "") {
+//     return;
+//   }
+
+//   const tableData = await getTableData(tableName);
+
+//   if (tableData.length === 0) {
+//     alert("No data found in the table");
+//     return;
+//   }
+
+//   let tableHeaders = Object.keys(tableData[0]);
+//   //remove the id column from the table headers my checking if the column name is _id
+//   tableHeaders = tableHeaders.filter((header) => header !== "_id");
+
+//   console.log(tableData);
+
+//   //populate the table structure
+//   populateUpdateTableStructure(tableName, tableHeaders, tableData);
+// };
+
+// Delete tab content
+
+const handleDeleteRecord = async (tableName, recordToDelete) => {
+  //submit form to /database-operator/delete.php with data as table_name and record_id
+  const url = "/database-operator/delete.php";
+  const options = {
+    method: "POST",
+    body: JSON.stringify({
+      table_name: tableName,
+      record_id: recordToDelete,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+
+  fetch(url, options)
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      if (data.status === "success") {
+        alert("Record deleted successfully");
+        //refresh the table data
+        handleUpdateDeleteTableSelectChange(
+          { target: { value: tableName } },
+          "delete"
+        );
+      } else {
+        alert(data.message || "Record deletion failed");
+      }
+    })
+    .catch((error) => {
+      console.log("Error:", error.message);
+    });
+};
+
+const populateDeleteTableStructure = (tableName, tableHeaders, tableData) => {
+  const rowsContainer = document.querySelector("#delete-records-rows");
+  rowsContainer.innerHTML = ""; // Clear existing rows
+
+  // Create Header Row
+  const headerRow = document.createElement("div");
+  headerRow.className = "grid gap-4 font-bold bg-gray-300 p-2";
+  headerRow.style.gridTemplateColumns = `${"1fr ".repeat(
+    tableHeaders.length
+  )} 0.5fr`; // last 0.5fr for Action column
+
+  // Populate Header
+  tableHeaders.forEach((header) => {
+    const headerCell = document.createElement("div");
+    headerCell.className = "text-center";
+    headerCell.textContent = header;
+    headerRow.appendChild(headerCell);
+  });
+  // Add Action Column Header
+  const actionHeader = document.createElement("div");
+  actionHeader.className = "text-center";
+  actionHeader.textContent = "Action";
+  headerRow.appendChild(actionHeader);
+
+  rowsContainer.appendChild(headerRow);
+
+  // Loop through tableData to create rows
+  tableData.forEach((rowData, rowIndex) => {
+    // Create a form for each row
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "grid gap-4 items-center p-2";
+    rowDiv.style.gridTemplateColumns = `${"1fr ".repeat(
+      tableHeaders.length
+    )} 0.5fr`; // Last 0.5fr for Action column
+
+    // Create text fields for each header
+    tableHeaders.forEach((header) => {
+      const textDiv = document.createElement("div");
+      textDiv.className = "text-sm p-2 border-b w-full bg-gray-300";
+      textDiv.innerText = rowData[header] || "-"; // Display value or hyphen if not available
+
+      rowDiv.appendChild(textDiv);
+    });
+
+    // Create Action button for Delete
+    const actionDiv = document.createElement("div");
+    actionDiv.className = "text-center";
+    const deleteButton = document.createElement("button");
+    deleteButton.className =
+      "p-2 bg-red-600 text-white rounded-xl cursor-pointer text-sm";
+    deleteButton.innerText = "Delete";
+
+    // Handle Delete button click
+    deleteButton.onclick = () => {
+      const recordToDelete = rowData._id;
+      console.log("Deleting record with _id:", recordToDelete);
+      handleDeleteRecord(tableName, recordToDelete);
+    };
+
+    actionDiv.appendChild(deleteButton);
+    rowDiv.appendChild(actionDiv);
+
+    // Append the row
+    rowsContainer.appendChild(rowDiv);
+  });
+};
+
+//common function for both update and delete tab
+const handleUpdateDeleteTableSelectChange = async (event, tab) => {
   const tableName = event.target.value;
   if (tableName === "") {
     return;
   }
 
-  //fetch the table data from /database-operator/get-table-data.php
-  fetch(
-    "/database-operator/get-table-data.php?table_name=" +
-      tableName
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data);
-      if (data.status === "success") {
-        // populateUpdateTableData(data.data);
-      } else {
-        alert(data.message || "Failed to fetch table data");
-      }
-    });
+  const tableData = await getTableData(tableName);
+
+  if (tableData.length === 0) {
+    alert("No data found in the table");
+    return;
+  }
+
+  console.log("tableData: ", tableData);
+
+  let tableHeaders = Object.keys(tableData[0]);
+  //remove the id column from the table headers my checking if the column name is _id
+  tableHeaders = tableHeaders.filter((header) => header !== "_id");
+
+  //populate the table structure
+  if (tab === "delete") {
+    populateDeleteTableStructure(tableName, tableHeaders, tableData);
+  } else if (tab === "update") {
+    populateUpdateTableStructure(tableName, tableHeaders, tableData);
+  }
 };

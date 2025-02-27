@@ -81,7 +81,8 @@
                             Choose Table to Insert Record
                         </label>
                         <select name="table-name-select" id="insert-table-name-select" required
-                            class="table-name-select p-2 rounded-xl border cursor-pointer" onchange="handleTableSelectChange(event)">
+                            class="table-name-select p-2 rounded-xl border cursor-pointer"
+                            onchange="handleTableSelectChange(event)">
                             >
                             <!-- Options will be added here dynamically -->
                         </select>
@@ -98,31 +99,46 @@
                 </form>
             </div>
             <div id="update-tab-content"
-                class="tab-content hidden w-full flex-1 bg-gray-200 rounded-2xl rounded-tl-none rounded-tr-none p-3 flex-col gap-3 overflow-y-auto">
+                class="tab-content hidden w-full flex-1 bg-gray-200 rounded-2xl rounded-tl-none rounded-tr-none p-3 flex-col gap-3  overflow-y-auto">
                 <h2 class="text-xl font-semibold">Update Record from Table</h2>
-                <form action="./insert.php" method="post" onsubmit="handleInsertRecordSubmit(event)"
-                    class="flex flex-col gap-2 h-full">
+                <div class="flex flex-col gap-2 h-full">
                     <div class="input-box flex gap-3 items-center">
                         <label for="table-name">
-                            Choose Table to Insert Record
+                            Choose Table to Update Record
                         </label>
                         <select name="table-name-select" id="update-table-name-select" required
-                            class="table-name-select p-2 rounded-xl border cursor-pointer" onchange="handleUpdateTableSelectChange(event)">
+                            class="table-name-select p-2 rounded-xl border cursor-pointer"
+                            onchange="handleUpdateDeleteTableSelectChange(event, 'update')">
                             >
                             <!-- Options will be added here dynamically -->
                         </select>
                     </div>
                     <hr class="text-gray-400">
-                    <div id="update-records-fields" class="update-records-fields"></div>
-                    <div class="create-table-form-submit-btn absolute bottom-4 right-4">
-                        <button type="submit" class="p-3 px-5  bg-blue-600 text-white rounded-xl mt-3 cursor-pointer">
-                            Insert Record
-                        </button>
+                    <div id="update-records-rows" class="update-records-rows flex-1 max-h-full flex flex-col gap-3 ">
+                        <!-- Rows will be added here dynamically -->
                     </div>
-                </form>
+                </div>
             </div>
             <div id="delete-tab-content"
-                class="tab-content hidden w-full flex-1 bg-gray-200 rounded-2xl rounded-tl-none rounded-tr-none">Delete
+                class="tab-content hidden w-full flex-1 bg-gray-200 rounded-2xl rounded-tl-none rounded-tr-none p-3 flex-col gap-3  overflow-y-auto">
+                <h2 class="text-xl font-semibold">Delete Record from Table</h2>
+                <div class="flex flex-col gap-2 h-full">
+                    <div class="input-box flex gap-3 items-center">
+                        <label for="table-name">
+                            Choose Table to Delete Record
+                        </label>
+                        <select name="table-name-select" id="delete-table-name-select" required
+                            class="table-name-select p-2 rounded-xl border cursor-pointer"
+                            onchange="handleUpdateDeleteTableSelectChange(event, 'delete')">
+                            >
+                            <!-- Options will be added here dynamically -->
+                        </select>
+                    </div>
+                    <hr class="text-gray-400">
+                    <div id="delete-records-rows" class="delete-records-rows flex-1 max-h-full flex flex-col gap-3 ">
+                        <!-- Rows will be added here dynamically -->
+                    </div>
+                </div>
             </div>
         </div>
     </main>
