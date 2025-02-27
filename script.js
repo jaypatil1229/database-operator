@@ -118,7 +118,7 @@ const addColumnField = () => {
                     </div>
                     <div class="ml-auto flex items-center mr-10">
                         <button type="button" onclick="deleteColumnField('create-table-column-field-${columnFieldColumnCount}')"
-                            class="w-6 h-6 flex items-center justify-center text-white bg-red-500 text-2xl rounded-full text-sm cursor-pointer">
+                            class="w-6 h-6 flex items-center justify-center text-white bg-red-500 text-2xl rounded-full cursor-pointer">
                             X
                         </button>
                     </div>`;

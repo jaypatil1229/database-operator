@@ -12,6 +12,8 @@
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
 
+
+
     // Check if data is received
     if(!$data){
         echo json_encode(["status" => "error", "message" => "No data received"]);
@@ -48,6 +50,9 @@
     }, $columns);
 
     $columns_string = implode(',', $columns_string);
+    echo json_encode(["status"=>"success", "data"]);
+    // Add the auto-increment `_id` column at the beginning
+    $columns_string = "_id INT AUTO_INCREMENT PRIMARY KEY, " . $columns_string;
 
 
 

@@ -113,9 +113,7 @@
                         </select>
                     </div>
                     <hr class="text-gray-400">
-                    <div id="insert-record-input-fields" class="columns grid grid-cols-2 lg:grid-cols-3 gap-3">
-                        <!-- Columns will be added here dynamically -->
-                    </div>
+                    <div id="update-records-fields" class="update-records-fields"></div>
                     <div class="create-table-form-submit-btn absolute bottom-4 right-4">
                         <button type="submit" class="p-3 px-5  bg-blue-600 text-white rounded-xl mt-3 cursor-pointer">
                             Insert Record

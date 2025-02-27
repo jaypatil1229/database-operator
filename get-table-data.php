@@ -31,6 +31,7 @@
     // Get table data
     $sql = "SELECT * FROM $table_name";
     $result = mysqli_query($conn, $sql);
+    $data = [];
 
     if (mysqli_num_rows($result) > 0) {
         while($row = mysqli_fetch_assoc($result)) {
