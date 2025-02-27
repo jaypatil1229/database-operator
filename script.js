@@ -24,22 +24,41 @@ tabs.forEach((tab) => {
 });
 
 const setTableNames = (type) => {
+  const tableSelect = document.querySelector(`#${type}-table-name-select`);
+  const value = tableSelect.value;
+
   //fetch table names from /database-operator/get-all-tables.php
   fetch("/database-operator/get-all-tables.php")
     .then((response) => response.json())
     .then((data) => {
       if (data.status === "success") {
-        const tableSelect = document.querySelector(
-          `#${type}-table-name-select`
-        );
-
         tableSelect.innerHTML = `<option value="" disabled selected>Select a table</option>`;
         data.data.forEach((table) => {
           const option = document.createElement("option");
           option.value = table.table_name;
           option.textContent = table.table_name;
+          if (value === table.table_name) {
+            option.selected = true;
+          }
           tableSelect.appendChild(option);
         });
+
+        //populate the table structure for the selected table
+        if (value !== "") {
+          if (type === "insert") {
+            handleTableSelectChange({ target: { value: value } });
+          } else if (type === "update") {
+            handleUpdateDeleteTableSelectChange(
+              { target: { value: value } },
+              "update"
+            );
+          } else if (type === "delete") {
+            handleUpdateDeleteTableSelectChange(
+              { target: { value: value } },
+              "delete"
+            );
+          }
+        }
       } else {
         alert(data.message || "Failed to fetch tables");
       }
