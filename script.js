@@ -46,7 +46,7 @@ const setTableNames = (type) => {
         //populate the table structure for the selected table
         if (value !== "") {
           if (type === "insert") {
-            handleTableSelectChange({ target: { value: value } });
+            // handleTableSelectChange({ target: { value: value } });
           } else if (type === "update") {
             handleUpdateDeleteTableSelectChange(
               { target: { value: value } },
@@ -136,7 +136,6 @@ const addColumnField = () => {
                             <option value="TEXT">TEXT</option>
                             <option value="DATE">DATE</option>
                             <option value="TIME">TIME</option>
-                            <option value="CHAR">CHAR</option>
                         </select>
                     </div>
                     <div class="ml-auto flex items-center mr-10">
