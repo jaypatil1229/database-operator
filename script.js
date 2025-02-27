@@ -46,23 +46,28 @@ const setTableNames = (type) => {
     });
 };
 
+const getTableStructure = async (tableName) => {
+  //fetch the table structure from /database-operator/get-table-structures.php
+  const response = await fetch(
+    "/database-operator/get-table-structures.php?table_name=" + tableName
+  );
+  const data = await response.json();
+  return data.status === "success" ? data.data : [];
+};
+
 const handleTableSelectChange = (event) => {
   const tableName = event.target.value;
   if (tableName === "") {
     return;
   }
 
-  //fetch the table structure from /database-operator/get-table-structures.php
-  fetch("/database-operator/get-table-structures.php?table_name=" + tableName)
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data);
-      if (data.status === "success") {
-        populateTableStructure(data.data);
-      } else {
-        alert(data.message || "Failed to fetch table structure");
-      }
-    });
+  getTableStructure(tableName).then((data) => {
+    if (data.length === 0) {
+      alert("No data found in the table");
+      return;
+    }
+    populateTableStructure(data);
+  });
 };
 
 const populateTableStructure = (data) => {
@@ -79,7 +84,6 @@ const populateTableStructure = (data) => {
     } else if (column.Type.includes("date")) {
       inputType = "date";
     } else if (column.Type.includes("time")) {
-      console.log("time");
       inputType = "time";
     }
 
@@ -100,9 +104,9 @@ const addColumnField = () => {
 
   const parentContainer = document.querySelector("#table-columns-input-fields");
   const clutter = `<div>
-                        <label for="column-name-${columnFieldColumnCount}" class="font-semibold">Column Name</label>
-                        <input type="text" name="column-name-${columnFieldColumnCount}" id="column-name-${columnFieldColumnCount}"
-                            placeholder="Enter the column name" required class="p-2 rounded-xl border">
+                      <label for="column-name-${columnFieldColumnCount}" class="font-semibold">Column Name</label>
+                      <input type="text" name="column-name-${columnFieldColumnCount}" id="column-name-${columnFieldColumnCount}"
+                          placeholder="Enter the column name" required class="p-2 rounded-xl border">
                     </div>
                     <div>
                         <label for="column-datatype-${columnFieldColumnCount}" class="font-semibold">Column Datatype</label>
@@ -117,11 +121,17 @@ const addColumnField = () => {
                         </select>
                     </div>
                     <div class="ml-auto flex items-center mr-10">
-                        <button type="button" onclick="deleteColumnField('create-table-column-field-${columnFieldColumnCount}')"
-                            class="w-6 h-6 flex items-center justify-center text-white bg-red-500 text-2xl rounded-full cursor-pointer">
-                            X
-                        </button>
-                    </div>`;
+                      <button type="button"
+                          onclick="deleteColumnField('create-table-column-field-${columnFieldColumnCount}')"
+                          class="w-6 h-6 flex items-center justify-center text-red-500 text-2xl rounded-full cursor-pointer">
+                          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg"
+                              fill = "currentColor" class="bi bi-x"
+                              viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                              <path
+                                  d="M170.5 51.6L151.5 80l145 0-19-28.4c-1.5-2.2-4-3.6-6.7-3.6l-93.7 0c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80 368 80l48 0 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-8 0 0 304c0 44.2-35.8 80-80 80l-224 0c-44.2 0-80-35.8-80-80l0-304-8 0c-13.3 0-24-10.7-24-24S10.7 80 24 80l8 0 48 0 13.8 0 36.7-55.1C140.9 9.4 158.4 0 177.1 0l93.7 0c18.7 0 36.2 9.4 46.6 24.9zM80 128l0 304c0 17.7 14.3 32 32 32l224 0c17.7 0 32-14.3 32-32l0-304L80 128zm80 64l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16z" />
+                          </svg>
+                      </button>
+                  </div>`;
 
   const div = document.createElement("div");
   div.id = `create-table-column-field-${columnFieldColumnCount}`;
@@ -415,7 +425,7 @@ const populateUpdateTableStructure = (tableName, tableHeaders, tableData) => {
 
   // Create Header Row
   const headerRow = document.createElement("div");
-  headerRow.className = "grid gap-4 font-bold bg-gray-300 p-2";
+  headerRow.className = "grid gap-4 font-bold bg-gray-400/50 p-2 text-gray-950";
   headerRow.style.gridTemplateColumns = `${"1fr ".repeat(
     tableHeaders.length
   )} 0.5fr`; // last 0.5fr for Action column
@@ -424,7 +434,7 @@ const populateUpdateTableStructure = (tableName, tableHeaders, tableData) => {
   tableHeaders.forEach((header) => {
     const headerCell = document.createElement("div");
     headerCell.className = "text-center";
-    headerCell.textContent = header;
+    headerCell.textContent = header.Field;
     headerRow.appendChild(headerCell);
   });
   // Add Action Column Header
@@ -455,20 +465,31 @@ const populateUpdateTableStructure = (tableName, tableHeaders, tableData) => {
       // Add _id to updatedData
       updatedData._id = rowData._id;
       console.log("record", updatedData);
-      handleUpdateRecordSubmit(tableName, tableHeaders, updatedData);
+      const tempHeaders = tableHeaders.map((header) => header.Field);
+      handleUpdateRecordSubmit(tableName, tempHeaders, updatedData);
     };
 
     // Create input fields for each header
     tableHeaders.forEach((header) => {
       const inputDiv = document.createElement("div");
       const input = document.createElement("input");
-      input.type = "text";
-      input.name = header;
-      input.id = `${header}-${rowIndex}`;
-      input.placeholder = `Enter ${header}`;
+      let inputType = "text";
+
+      if (header.Type.includes("int")) {
+        inputType = "number";
+      } else if (header.Type.includes("date")) {
+        inputType = "date";
+      } else if (header.Type.includes("time")) {
+        inputType = "time";
+      }
+
+      input.type = inputType;
+      input.name = header.Field;
+      input.id = `${header.Field}-${rowIndex}`;
+      input.placeholder = `Enter ${header.Field}`;
       input.required = true;
-      input.className = "text-sm p-2 border-b w-full bg-gray-300";
-      input.value = rowData[header] || ""; // Set initial value if available
+      input.className = "text-sm p-2 border-b w-full bg-gray-300/40";
+      input.value = rowData[header.Field] || ""; // Set initial value if available
 
       inputDiv.appendChild(input);
       form.appendChild(inputDiv);
@@ -490,29 +511,6 @@ const populateUpdateTableStructure = (tableName, tableHeaders, tableData) => {
     rowsContainer.appendChild(form);
   });
 };
-
-// const handleUpdateTableSelectChange = async (event) => {
-//   const tableName = event.target.value;
-//   if (tableName === "") {
-//     return;
-//   }
-
-//   const tableData = await getTableData(tableName);
-
-//   if (tableData.length === 0) {
-//     alert("No data found in the table");
-//     return;
-//   }
-
-//   let tableHeaders = Object.keys(tableData[0]);
-//   //remove the id column from the table headers my checking if the column name is _id
-//   tableHeaders = tableHeaders.filter((header) => header !== "_id");
-
-//   console.log(tableData);
-
-//   //populate the table structure
-//   populateUpdateTableStructure(tableName, tableHeaders, tableData);
-// };
 
 // Delete tab content
 
@@ -556,7 +554,7 @@ const populateDeleteTableStructure = (tableName, tableHeaders, tableData) => {
 
   // Create Header Row
   const headerRow = document.createElement("div");
-  headerRow.className = "grid gap-4 font-bold bg-gray-300 p-2";
+  headerRow.className = "grid gap-4 font-bold bg-gray-400/50 p-2 text-gray-950";
   headerRow.style.gridTemplateColumns = `${"1fr ".repeat(
     tableHeaders.length
   )} 0.5fr`; // last 0.5fr for Action column
@@ -564,7 +562,7 @@ const populateDeleteTableStructure = (tableName, tableHeaders, tableData) => {
   // Populate Header
   tableHeaders.forEach((header) => {
     const headerCell = document.createElement("div");
-    headerCell.className = "text-center";
+    headerCell.className = "px-2";
     headerCell.textContent = header;
     headerRow.appendChild(headerCell);
   });
@@ -580,7 +578,9 @@ const populateDeleteTableStructure = (tableName, tableHeaders, tableData) => {
   tableData.forEach((rowData, rowIndex) => {
     // Create a form for each row
     const rowDiv = document.createElement("div");
-    rowDiv.className = "grid gap-4 items-center p-2";
+    rowDiv.className = `grid gap-4 items-center p-2 ${
+      rowIndex % 2 === 0 ? "bg-gray-300/40" : "bg-gray-300/80"
+    }`;
     rowDiv.style.gridTemplateColumns = `${"1fr ".repeat(
       tableHeaders.length
     )} 0.5fr`; // Last 0.5fr for Action column
@@ -588,7 +588,7 @@ const populateDeleteTableStructure = (tableName, tableHeaders, tableData) => {
     // Create text fields for each header
     tableHeaders.forEach((header) => {
       const textDiv = document.createElement("div");
-      textDiv.className = "text-sm p-2 border-b w-full bg-gray-300";
+      textDiv.className = "text-sm p-2 w-full";
       textDiv.innerText = rowData[header] || "-"; // Display value or hyphen if not available
 
       rowDiv.appendChild(textDiv);
@@ -641,6 +641,8 @@ const handleUpdateDeleteTableSelectChange = async (event, tab) => {
   if (tab === "delete") {
     populateDeleteTableStructure(tableName, tableHeaders, tableData);
   } else if (tab === "update") {
+    tableHeaders = await getTableStructure(tableName);
+    console.log("tableHeaders from update: ", tableHeaders);
     populateUpdateTableStructure(tableName, tableHeaders, tableData);
   }
 };
