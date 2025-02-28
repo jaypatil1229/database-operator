@@ -36,9 +36,9 @@
 
     //Check if table exists
     $sql = "SHOW TABLES LIKE '$table_name'";
-    $result = $conn->query($sql);
+    $result = mysqli_query($conn, $sql);
 
-    if($result->num_rows <= 0){
+    if (mysqli_num_rows($result) <= 0) {
         echo json_encode(["status" => "error", "message" => "Table $table_name does not exist"]);
         exit();
     }

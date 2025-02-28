@@ -42,27 +42,46 @@
 
     // Check if table exists
     $sql = "SHOW TABLES LIKE '$table_name'";
-    $result = $conn->query($sql);
+    $result = mysqli_query($conn, $sql);
 
-    if($result->num_rows == 0){
+    if (mysqli_num_rows($result) == 0) {
         echo json_encode(["status" => "error", "message" => "Table $table_name does not exist"]);
         exit();
     }
 
-    // Update record
-    $update_columns = array_map(function($column){
-        return $column['column_name'] . "='" . $column['column_value'] . "'";
-    }, $record);
+    // Prepare Update columns
+    // $update_columns = array_map(function($column){
+    //     return $column['column_name'] . "='" . $column['column_value'] . "'";
+    // }, $record);
+    // $update_columns = implode(',', $update_columns);
 
-    $update_columns = implode(',', $update_columns);
-
-    $sql = "UPDATE $table_name SET $update_columns WHERE _id=$record_id";
-    $result = $conn->query($sql);
-
-    if($result){
-        echo json_encode(["status" => "success", "message" => "Record updated successfully"]);
-    }else{
-        echo json_encode(["status" => "error", "message" => "Failed to update record"]);
+    // Prepare update columns(better way)
+    $update_columns = [];
+    foreach ($record as $column) {
+        $column_name = mysqli_real_escape_string($conn, $column['column_name']);
+        $column_value = mysqli_real_escape_string($conn, $column['column_value']);
+        
+        // Handle numeric and string values properly
+        if (is_numeric($column_value)) {
+            $update_columns[] = "`$column_name` = $column_value";
+        } else {
+            $update_columns[] = "`$column_name` = '$column_value'";
+        }
     }
+
+
+
+    // Update record query
+    $sql = "UPDATE `$table_name` SET $update_string WHERE `_id` = $record_id";
+
+    // Execute query
+    if (mysqli_query($conn, $sql)) {
+        echo json_encode(["status" => "success", "message" => "Record updated successfully"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Failed to update record: " . mysqli_error($conn)]);
+    }
+
+    // Close connection
+    mysqli_close($conn);
 
 ?>
